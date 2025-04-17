@@ -4,3 +4,4 @@
 * Please find the source code in the **code** folder.
     * `npm run start` to activate the custom visual.
 * Need more info/help? Please visit [here](https://weiweicui.github.io/PowerBI-Flowmap).
+** 테스트 메시지 **
