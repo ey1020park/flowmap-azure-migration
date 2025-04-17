@@ -13,7 +13,7 @@
             "dom"
         ]
     },
-    "files": [
-        "src/visual.ts"
-    ]
+    "include": [
+        "src/**/*"
+      ]
 }
