@@ -34,9 +34,14 @@ import { Visual as Flowmap } from './flowmap/visual';
 //     public update(options: VisualUpdateOptions) {
 //     }
 // }
-
+// ✅ IVisual을 확장한 타입 정의
+interface IExtendedVisual extends powerbi.extensibility.visual.IVisual {
+    enumerateObjectInstances?: (
+      options: EnumerateVisualObjectInstancesOptions
+    ) => VisualObjectInstance[] | VisualObjectInstanceEnumerationObject;
+  }
 export class Visual implements IVisual {
-    private _visual: IVisual;
+    private _visual: IExtendedVisual; // ✅ 수정
     constructor(options: VisualConstructorOptions) {
         this._visual = new Flowmap(options);
     }

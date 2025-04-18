@@ -17,9 +17,9 @@ import { Format } from "./format";
 
 import { override, groupBy, StringMap, Func, copy, values, sort, dict } from '../lava/type';
 import { selex } from "../lava/d3";
-import { AzureMapFormat, ILocation } from "../lava/azuremap"; // ✅ BingMap 대신 AzureMap 클래스 사용
+import { MapFormat as AzureMapFormat, ILocation } from "../lava/azuremap";
 import * as app from '../lava/flowmap/app';
-import { keys, sum } from "d3";
+import { sum } from 'd3-array';
 
 const persist = {
     map: new Persist<[atlas.data.Position, number]>('persist', 'map'),
@@ -34,6 +34,7 @@ export class Visual implements IVisual {
     private _cfg = null;
     private _inited = false;
     private _initing = false;
+    private _config: app.Config<Format>;
 
     constructor(options: VisualConstructorOptions) {
         if (!options) return;
@@ -49,7 +50,11 @@ export class Visual implements IVisual {
 
         // 지도 이벤트 처리: Azure Maps로 변경된 app.ts가 이를 수용해야 함
         app.events.flow.pathInited = group => {
-            tooltip.add(group, arg => app.tooltipForPath(this._ctx, arg.data.leafs));
+            tooltip.add(group, arg => {
+                const keys = arg.data.leafs as string[];
+                const rows = keys.flatMap(k => app.key2rows[k] || []); // 👈 이렇게 매핑
+                return app.tooltipForPath(this._ctx, rows);
+            });
         };
         app.events.doneGeocoding = locs => {
             copy(locs, persist.geocode.value({}));
@@ -70,7 +75,8 @@ export class Visual implements IVisual {
         if (this._initing) return;
 
         const ctx = this._ctx.update(view);
-        const reset = (config: app.Config) => app.reset(config, () => ctx.meta.mapControl.autoFit && app.tryFitView());
+        const reset = (config: app.Config<Format>) => {
+            app.reset(config, ctx, "mapControl", () => ctx.meta.mapControl.autoFit && app.tryFitView());
 
         if (!this._inited) {
             this._initing = true;
@@ -80,7 +86,10 @@ export class Visual implements IVisual {
 
             app.init(this._target, mapFmt, persist.banner.value() || [], ctl => {
                 const [center, zoom] = persist.map.value() || [null, null];
-                if (center) ctl.setCamera(center, zoom);
+                if (center) {
+                    const loc = { latitude: center[1], longitude: center[0] }; // Position → ILocation 변환
+                    ctl.setCamera(loc, zoom);
+                  }
 
                 ctl.add({
                     transform: (c, p, e) => {
@@ -93,13 +102,13 @@ export class Visual implements IVisual {
                 });
 
                 this._initing = false;
-                reset(this._cfg = this._config());
+                reset(this._cfg = this._config);
                 this._inited = true;
             });
         } else {
             if (ctx.isResizeVisualUpdateType(options)) return;
 
-            const config = this._cfg = this._config(), fmt = ctx.fmt;
+            const config = this._cfg = this._config, fmt = ctx.fmt;
             if (ctx.dirty()) {
                 // 다양한 조건에 따라 앱 상태 재설정 또는 리페인트
                 if (fmt.style.dirty()) reset(config);
@@ -134,6 +143,7 @@ export class Visual implements IVisual {
             }
         }
     }
+}
 
     public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] {
         return this._ctx.fmt.enumerate(options.objectName, this._ctx, this._cfg);

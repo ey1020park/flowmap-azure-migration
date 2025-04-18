@@ -52,7 +52,9 @@ let _drag = drag()
   .on('drag', (d: string, event: any) => {
     groups[d].att.translate({ x: event.x, y: event.y });
     const loc = $state.mapctl.location({ x: event.x, y: event.y });
-    events.onDrag?.(d, loc);
+    if (events.onDrag) {
+      events.onDrag(d, loc);
+    }
   });
 
 export function reset(rows: number[][]) {

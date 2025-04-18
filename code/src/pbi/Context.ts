@@ -3,8 +3,9 @@ import { Roles } from './Roles';
 import { Category } from './Category';
 import { StringMap, sequence, Func, values, first, groupBy } from '../lava/type';
 import { FormatManager, Config, FormatInstance, Binding, FormatDumper } from "./Format";
-import { Persist } from "./Persist";
-
+import { Persist } from "./Persist"; 
+import { Config as ConfigClass } from "../lava/flowmap/config"; // ✅ 클래스 명시
+// 타입용 Config 임포트는 제거하거나 충돌되지 않도록 처리
 
 type FmtDict<R extends string, F> = { [P in keyof F]: FormatManager<R, F[P]> }
 
@@ -16,13 +17,28 @@ export class Context<R extends string, F> {
     public readonly host: powerbi.extensibility.visual.IVisualHost;
 
     private _view: powerbi.DataView;
+    private _rows: number[];
+    private _catCache: StringMap<Category>;
+    private _fmt: { [P in keyof F]: Readonly<F[P]> };
+    private _config: ConfigClass<F>; // ✅ 수정
+
+    constructor(host: powerbi.extensibility.visual.IVisualHost, dft: F) {
+        Persist.HOST = host;
+        this.host = host;
+        this._catCache = {};
+        for (const oname in dft) {
+            this.fmt[oname] = new FormatManager(oname, dft[oname], this);
+        }
+    }
 
     public palette(key: string): string {
         return this.host.colorPalette.getColor(key).value;
     }
 
     public isResizeVisualUpdateType(options: powerbi.extensibility.visual.VisualUpdateOptions): boolean {
-        return options.type === 4 || options.type === 32 || options.type === 36;
+        return options.type === powerbi.VisualUpdateType.Resize
+            || options.type === powerbi.VisualUpdateType.ViewMode
+            || options.type === powerbi.VisualUpdateType.FormatModeChange;
     }
 
     public persist<O extends keyof F, P extends keyof F[O]>(oname: O, pname: P, v: F[O][P]) {
@@ -43,8 +59,7 @@ export class Context<R extends string, F> {
             const obj = view.metadata.objects[oname];
             if (pname) {
                 return (obj || {})[pname];
-            }
-            else {
+            } else {
                 return obj;
             }
         }
@@ -71,8 +86,7 @@ export class Context<R extends string, F> {
             const rows = key2rows[k], row = first(rows, r => key(r) in values);
             if (row !== undefined) {
                 result.push({ row, value: values[key(row)], name: rows.map(r => labels[r]).join(','), key: k });
-            }
-            else {
+            } else {
                 result.push({ row: rows[0], name: rows.map(r => labels[r]).join(','), key: k });
             }
         }
@@ -95,8 +109,7 @@ export class Context<R extends string, F> {
                     return true;
                 }
             }
-        }
-        else {
+        } else {
             for (const k of onames) {
                 if (this.fmt[k].dirty()) {
                     return true;
@@ -139,15 +152,6 @@ export class Context<R extends string, F> {
         return result;
     }
 
-    constructor(host: powerbi.extensibility.visual.IVisualHost, dft: F) {
-        Persist.HOST = host;
-        this.host = host;
-        this._catCache = {};
-        for (const oname in dft) {
-            this.fmt[oname] = new FormatManager(oname, dft[oname], this);
-        }
-    }
-
     public group(...roles: R[]): number[][] {
         if (roles.every(r => !this.cat(r))) {
             return [this.rows()];
@@ -158,7 +162,7 @@ export class Context<R extends string, F> {
                 keys.push(this.cat(r).key);
             }
         }
-        const id = keys.length === 1 ? keys[0] : (r: number) => keys.map(k => k(r)).join(' ');;
+        const id = keys.length === 1 ? keys[0] : (r: number) => keys.map(k => k(r)).join(' ');
         let cache = {} as StringMap<number[]>;
         for (let row of this.rows()) {
             const key = id(row);
@@ -177,31 +181,28 @@ export class Context<R extends string, F> {
         }
         if (this._view && this._view.categorical.categories[0]) {
             this._rows = sequence(0, this._view.categorical.categories[0].values.length);
-        }
-        else {
+        } else {
             this._rows = [];
         }
         return this._rows;
     }
 
-    private _rows: number[];
-
-    private _fmt: { [P in keyof F]: Readonly<F[P]> };
     public get meta(): Readonly<{ [P in keyof F]: Readonly<F[P]> }> {
         return this._fmt;
     }
+    
 
     public update(view: powerbi.DataView): this {
         this._view = view;
         this._catCache = {};
         this._rows = null;
-        //update other things below
         this.roles.update(view);
         const format = (view.metadata.objects || {}) as any as F;
         this._fmt = {} as any;
         for (const oname in this.fmt) {
             this._fmt[oname] = this.fmt[oname].update(format[oname]);
         }
+        this._config = new ConfigClass<F>(this); // ✅ Context 인스턴스(this) 넘김
         return this;
     }
 
@@ -210,8 +211,7 @@ export class Context<R extends string, F> {
             || first(this._view.categorical.categories, c => c.source.roles[r], null);
         if (c) {
             return r => (c.values[r] as any as T);
-        }
-        else {
+        } else {
             return null;
         }
     }
@@ -220,8 +220,7 @@ export class Context<R extends string, F> {
         if (roles.length === 1) {
             if (this.cat(roles[0])) {
                 return this.cat(roles[0]).key;
-            }
-            else {
+            } else {
                 return r => "";
             }
         }
@@ -233,25 +232,25 @@ export class Context<R extends string, F> {
     public type(r: R): powerbi.ValueTypeDescriptor {
         if (this.cat(r)) {
             return this.cat(r).column.source.type;
-        }
-        else {
+        } else {
             return {};
         }
     }
 
-    private _catCache: StringMap<Category>;
     public cat(r: R): Category {
         if (r in this._catCache) {
             return this._catCache[r];
-        }
-        else {
+        } else {
             const column = this.roles.column(r);
             if (column) {
                 return this._catCache[r] = new Category(column, this.host);
-            }
-            else {
+            } else {
                 return this._catCache[r] = null;
             }
         }
+    }
+
+    public getConfig(): ConfigClass<F> {
+        return this._config;
     }
 }

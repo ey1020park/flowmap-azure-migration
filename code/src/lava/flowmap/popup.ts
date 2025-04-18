@@ -1,4 +1,6 @@
-import { IListener } from "../bingmap";
+// 📁 src/lava/flowmap/popup.ts - Azure Maps 기반으로 리팩토링된 popup 처리 모듈
+
+import { IListener } from "../azuremap";
 import { Banner } from './banner';
 import { Pie, all as pies, get as pie } from './pie';
 import * as util from "./util";
@@ -12,7 +14,7 @@ let selected: StringMap<boolean>;
 
 export const events = {
     onChanged: null as (addrs: string[]) => void
-}
+};
 
 export function init(d3: ISelex): IListener {
     root = d3;
@@ -20,7 +22,7 @@ export function init(d3: ISelex): IListener {
         .content(p => marker(p))
         .key(p => key(p))
         .anchor(p => {
-            const pnt = $state.pixel(p.addr, Microsoft.Maps.PixelReference.control);
+            const pnt = $state.mapctl.pixel($state.loc(p.addr));
             pnt.y += (p.type === 'out' ? -1 : 1) * p.radius();
             return pnt;
         });
@@ -85,7 +87,7 @@ export function repaint() {
         let add = (p: Pie) => {
             banner.flip(p, p.type === 'out' ? 'top' : 'bottom');
             selected[key(p)] = true;
-        }
+        };
         if (label === 'all') {
             selected = {};
             pies().each(p => add(p));

@@ -2,7 +2,7 @@ import { format } from 'd3-format';
 import { Config } from './config';
 import { Func } from '../type';
 
-export function top(rows: number[], cfg: Config): number[] {
+export function top(rows: number[], cfg: Config<any>): number[] {
     const { sort, top } = cfg.numberSorter;
     const width = cfg.weight && cfg.weight.conv;
     if (width) {
@@ -16,7 +16,7 @@ export function top(rows: number[], cfg: Config): number[] {
     return +top >= rows.length ? rows : rows.slice(0, +top);
 }
 
-export function weighter(cfg: Config): Func<number, number> {
+export function weighter(cfg: Config<any>): Func<number, number> {
     if (cfg.weight) {
         return r => Math.max(cfg.weight.conv(r), 0);
     }

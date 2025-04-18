@@ -91,8 +91,12 @@ export class Legend {
     private _scaleWidth = 0;
     resize() {
         const { show, position } = $state.config.legend;
-        const height = $state.mapctl.map.getHeight();
-        const width = $state.mapctl.map.getWidth();
+        
+        // 💡 Azure Maps에서 getHeight/getWidth 대신 div의 client size 사용
+        const div = ($state.mapctl as any)._div as HTMLDivElement;
+        const height = div.clientHeight;
+        const width = div.clientWidth;
+    
         const legHeight = show ? this.height() : 0;
         const top = position === 'top' ? null : (height - legHeight + 2) + 'px';
         this._svg.sty.margin_top(top).sty.display(show ? null : 'none');

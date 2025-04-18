@@ -8,7 +8,33 @@ import { Category } from './Category';
 import { Context } from './Context';
 import * as deepequal from 'fast-deep-equal';
 import * as clone from 'clone';
+import { Config as ConfigClass } from '../lava/flowmap/config';
 
+// ✅ 기존 FormatDumper를 여기 통합 정의
+export class FormatDumper<T> {
+  private _fmt: FormatManager<string, T>;
+  private _dump = [] as powerbi.VisualObjectInstance[];
+  constructor(fmt: FormatManager<string, T>) {
+    this._fmt = fmt;
+  }
+
+  public get default() {
+    return [{
+      objectName: this._fmt.oname,
+      properties: __full[this._fmt.oname],
+      selector: null
+    }];
+  }
+
+  public add(ins: powerbi.VisualObjectInstance): this {
+    this._dump.push(ins);
+    return this;
+  }
+
+  public get result(): powerbi.VisualObjectInstance[] {
+    return this._dump;
+  }
+}
 type Instance = powerbi.VisualObjectInstance;
 
 export interface Binding<O, R extends string> {

@@ -3,17 +3,18 @@
         "allowJs": false,
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
-        "target": "es6",
+        "target": "es2019",
         "sourceMap": true,
         "outDir": "./.tmp/build/",
         "moduleResolution": "node",
         "declaration": true,
+        "skipLibCheck": true,
         "lib": [
-            "es2015",
+            "es2019",   
             "dom"
         ]
     },
-    "include": [
-        "src/**/*"
-      ]
-}
+    "files": [
+        "src/flowmap/visual.ts"
+      ] 
+ }

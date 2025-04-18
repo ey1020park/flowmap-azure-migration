@@ -1,13 +1,11 @@
 // 📁 src/lava/flowmap/pies.ts - Azure Maps 기반 Pie 마커 표시 모듈
 
 import { StringMap, Func, keys, dict, remap, groupBy } from '../type';
- 
 import { sum } from 'd3-array';
 import { IListener, ILocation } from '../azuremap';
 import { ISelex } from '../d3';
 import { $state } from './app';
 import { objectValues } from '../../utils/values';
-
 
 export class Pie {
   public readonly addr: string;
@@ -138,7 +136,9 @@ export function reset(data: number[]) {
   }
 
   root.selectAll<Pie>('.pie').sort((a, b) => b.total - a.total);
-  events.onPieCreated?.(root.selectAll<Pie>('.pie'));
+  if (events.onPieCreated) {
+    events.onPieCreated(root.selectAll<Pie>('.pie'));
+  }
   resetRadius();
 }
 

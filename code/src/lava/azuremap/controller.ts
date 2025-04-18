@@ -2,13 +2,13 @@
 // ✅ 기존 bingmap/controller.ts 구조를 최대한 유지하며 Azure Maps 기반으로 재작성한 버전입니다.
 
 import * as atlas from 'azure-maps-control';
+import { AuthenticationType } from 'azure-maps-control';
 import { ILocation, IBound } from './converter';
-
 import { anchor, anchorPixel, area, bound, fitOptions } from './converter';
 import { keys, IPoint } from '../type';
 import { ISelex, selex } from '../d3';
-import { AuthenticationType } from 'azure-maps-control';
- 
+import { AZURE_MAPS_KEY } from "./config";
+
 
 export interface IMapElement {
     forest: boolean,
@@ -101,11 +101,11 @@ export class Controller {
     private _initMap() {
         this._map = new atlas.Map(this._div, {
             view: 'Auto',
-            center: [127.0, 37.5], // 기본값, 이후 setCenterZoom으로 대체됨
+            center: [127.0, 37.5],
             zoom: 5,
             authOptions: {
                 authType: AuthenticationType.subscriptionKey,
-                subscriptionKey: 'YOUR_AZURE_MAPS_KEY'
+                subscriptionKey: AZURE_MAPS_KEY
             }
         });
 
@@ -118,6 +118,13 @@ export class Controller {
     public get svg() { return this._svgroot; }
     public get canvas() { return this._canvas; }
     public get format() { return this._fmt; }
+
+    public setCamera(center: ILocation, zoom: number): void {
+        this._map.setCamera({
+          center: [center.longitude, center.latitude],
+          zoom: zoom
+        });
+    }
 
     public setCenterZoom(center: atlas.data.Position, zoom: number) {
         this._map.setCamera({ center, zoom });
@@ -143,19 +150,18 @@ export class Controller {
         this._listener.push(listener);
         return this;
     }
-    
+
     public fitView(bounds: IBound[], backupCenter?: ILocation) {
         const width = this._div.clientWidth;
         const height = this._div.clientHeight;
-      
         const config = fitOptions(bounds, { width, height });
         this.setCenterZoom(config.center, config.zoom);
-      }    
+    }
 
     private _viewChange(end = false) {
         const zoom = this._map.getCamera().zoom;
         for (const l of this._listener) {
-            l.transform?.(this, this._zoom, end);
+            l.transform(this, this._zoom, end);
         }
         this._zoom = zoom;
     }
@@ -167,25 +173,18 @@ export class Controller {
         this._canvas.att.size(w, h);
         this._svgroot.att.translate(w / 2, h / 2);
         for (const l of this._listener) {
-            l.resize?.(this);
+            l.resize(this);
         }
     }
 }
+
 // 📌 controller.ts 맨 아래에 추가
 export function defaultZoom(width: number, height: number): number {
     const min = Math.min(width, height);
     for (let level = 1; level <= 20; level++) {
-      if (256 * Math.pow(2, level) > min) {
-        return level;
-      }
+        if (256 * Math.pow(2, level) > min) {
+            return level;
+        }
     }
     return 20;
-  }
-
-  public fitView(bounds: IBound[], backupCenter?: ILocation) {
-  const width = this._div.clientWidth;
-  const height = this._div.clientHeight;
-
-  const config = fitOptions(bounds, { width, height });
-  this.setCenterZoom(config.center, config.zoom);
 }

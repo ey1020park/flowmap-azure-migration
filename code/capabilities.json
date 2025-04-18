@@ -520,5 +520,6 @@
             }
         }
     },
+    "privileges": [],
     "suppressDefaultTitle": true
 }

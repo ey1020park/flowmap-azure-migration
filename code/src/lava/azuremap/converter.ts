@@ -1,9 +1,13 @@
 // 📁 src/lava/azuremap/converter.ts
 // ✅ 기존 bingmap/converter.ts를 기반으로 Azure Maps 대응용으로 리팩토링
-
+import * as atlas from 'azure-maps-control';
 import { defaultZoom } from './controller';
 import { ISize, IPoint, Func, StringMap, clamp } from '../type';
+import { pixel } from './controller'; // converter.ts 맨 위에서 pixel()을 불러옵니다
 
+export function anchorPixel(map: atlas.Map, bound: IBound): IPoint {
+    return pixel(map, bound.anchor); // 기본 anchor 위치만 픽셀로 변환 (wrap-around 없음)
+}
 export interface ILocation {
     latitude: number;
     longitude: number;
@@ -88,8 +92,9 @@ export function fitOptions(bounds: IBound[], view: ISize): { center: [number, nu
     n = clamp(n, -88, 88);
 
     const center: [number, number] = [(w + e) / 2, (s + n) / 2];
-    const height = Math.abs(helper.lat2y(n, 20) - helper.lat2y(s, 20));
-    const width = helper.lon2x(e - w, 20);
+    let height = Math.abs(helper.lat2y(n, 20) - helper.lat2y(s, 20));
+    let width = helper.lon2x(e - w, 20);
+    
 
     let level = 20;
     while (level > 1 && (width > view.width || height > view.height)) {
@@ -213,9 +218,9 @@ namespace helper {
     }
 
     export function loc(pixelX: number, pixelY: number, level: number): ILocation {
-        const mapSize = mapSize(level);
-        const x = Math.min(pixelX, mapSize - 1) / mapSize - 0.5;
-        const y = 0.5 - Math.min(pixelY, mapSize - 1) / mapSize;
+        const size = mapSize(level); // ✅ 함수 호출 → 변수명은 충돌 안나게 변경
+        const x = Math.min(pixelX, size - 1) / size - 0.5;
+        const y = 0.5 - Math.min(pixelY, size - 1) / size;
         const latitude = 90 - 360 * Math.atan(Math.exp(-y * 2 * Math.PI)) / Math.PI;
         const longitude = 360 * x;
         return { latitude, longitude };
