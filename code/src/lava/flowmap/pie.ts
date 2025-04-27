@@ -2,7 +2,7 @@
 
 import { StringMap, Func, keys, dict, remap, groupBy } from '../type';
 import { sum } from 'd3-array';
-import { IListener, ILocation } from '../azuremap';
+import { IListener, ILocation } from '../googlemap';
 import { ISelex } from '../d3';
 import { $state } from './app';
 import { objectValues } from '../../utils/values';

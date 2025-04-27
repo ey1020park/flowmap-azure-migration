@@ -5,7 +5,7 @@ import { $state } from './app';
 import { IShape, build } from './shape';
 import { IPath } from './algo';
 import { ISelex } from '../d3';
-import { IListener, IBound, ILocation } from '../azuremap';
+import { IListener, IBound, ILocation } from '../googlemap';
 
 let root: ISelex;
 
@@ -131,17 +131,26 @@ class VisualFlow {
   }
 }
 
+
 export function init(d3: ISelex): IListener {
   const rect = d3.append('rect');
-  const remask = () => rect
-    .att.width($state.mapctl.map.getMapContainer().clientWidth)
-    .att.height($state.mapctl.map.getMapContainer().clientHeight)
-    .att.x(-$state.mapctl.map.getMapContainer().clientWidth / 2)
-    .att.y(-$state.mapctl.map.getMapContainer().clientHeight / 2)
-    .att.fill_opacity(0.01)
-    .sty.pointer_events('none');
+
+  const remask = () => {
+    const div = $state.mapctl.container; // ✅ controller.ts의 getter 활용
+    const w = div.clientWidth;
+    const h = div.clientHeight;
+
+    rect
+      .att.width(w)
+      .att.height(h)
+      .att.x(-w / 2)
+      .att.y(-h / 2)
+      .att.fill_opacity(0.01)
+      .sty.pointer_events('none');
+  };
 
   root = d3.append('g');
+
   return {
     transform: (_, pzoom) => {
       flows.forEach(v => v.transform(pzoom));
@@ -150,6 +159,7 @@ export function init(d3: ISelex): IListener {
     resize: () => remask()
   };
 }
+
 
 export function add(rows: number[]) {
   flows.push(new VisualFlow(root.append('g'), rows));

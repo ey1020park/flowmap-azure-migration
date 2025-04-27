@@ -1,6 +1,6 @@
 import { Context } from './Context';
 import { StringMap, clamp } from '../lava/type';
-import { ILocation } from '../lava/azuremap';
+import { ILocation } from '../lava/googlemap';
 
 export function coords<R extends string>(data: Context<R, any>, key: R, lat: R, lon: R, locs?: StringMap<ILocation>): StringMap<ILocation> {
     locs = locs || {};

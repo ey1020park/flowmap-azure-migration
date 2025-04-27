@@ -1,6 +1,6 @@
 // 📁 src/lava/flowmap/popup.ts - Azure Maps 기반으로 리팩토링된 popup 처리 모듈
 
-import { IListener } from "../azuremap";
+import { IListener } from "../googlemap";
 import { Banner } from './banner';
 import { Pie, all as pies, get as pie } from './pie';
 import * as util from "./util";

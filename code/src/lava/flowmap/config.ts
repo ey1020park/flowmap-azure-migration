@@ -1,7 +1,7 @@
 // 파일: src/lava/flowmap/config.ts (Azure Maps 버전에 맞게 수정)
 
 import { StringMap } from "../type";
-import { ILocation, MapFormat } from "../azuremap"; // ✅ bingmap → azuremap으로 변경
+import { ILocation, MapFormat } from "../googlemap"; // ✅ bingmap → googlemap 변경
 import { Setting } from "../../pbi/numberFormat";
 import { Context } from "../../pbi"; // 경로는 실제 위치에 맞게 조정
 

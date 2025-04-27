@@ -22,6 +22,7 @@
     "powerbi-visuals-utils-tooltiputils": "2.4.0"
   },
   "devDependencies": {
+    "@types/google.maps": "^3.58.1",
     "ts-loader": "^9.4.4",
     "tslint": "^5.18.0",
     "tslint-microsoft-contrib": "^6.2.0",

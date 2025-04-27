@@ -51,6 +51,9 @@ export class Visual implements IVisual {
     }
 
     public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstance[] | VisualObjectInstanceEnumerationObject {
-        return this._visual.enumerateObjectInstances(options);
+        if (this._visual && typeof this._visual.enumerateObjectInstances === "function") {
+            return this._visual.enumerateObjectInstances(options);
+          }
+          return [];
     }
 }

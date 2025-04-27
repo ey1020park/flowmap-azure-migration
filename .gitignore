@@ -2,3 +2,4 @@ node_modules
 .tmp
 .bundle
 Default EULA.pdf
+code/src/config.*

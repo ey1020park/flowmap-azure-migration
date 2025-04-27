@@ -1,4 +1,4 @@
-import { MapFormat } from '../lava/azuremap/mapFormat';
+import { MapFormat } from '../lava/googlemap/mapFormat';
 import { Setting } from '../pbi/numberFormat';
 
 export class Format {

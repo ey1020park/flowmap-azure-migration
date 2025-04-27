@@ -1,6 +1,6 @@
-// 📁 src/lava/flowmap/pins.ts - Azure Maps용으로 리팩토링된 핀 표시 모듈
+// 📁 src/lava/flowmap/pins.ts - google Maps용으로 리팩토링된 핀 표시 모듈
 
-import { IListener, ILocation } from '../azuremap';
+import { IListener, ILocation } from '../googlemap';
 import { StringMap, IPoint, Func } from '../type';
 import { drag } from 'd3-drag';
 import { ISelex, selex } from '../d3';

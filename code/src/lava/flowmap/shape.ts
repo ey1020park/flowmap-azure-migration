@@ -1,6 +1,6 @@
 // 📁 src/lava/flowmap/shape.ts - Azure Maps 기반으로 리팩토링된 shape.ts
 
-import { ILocation, IBound, Converter } from '../azuremap';
+import { ILocation, IBound, Converter } from '../googlemap';
 import { Func, StringMap } from '../type';
 import { Key, IPathPoint, IPoint, ILayout, IPath, layout } from './algo';
 import { extent } from 'd3-array';
@@ -13,7 +13,7 @@ import {objectValues} from '../../utils/values'
 const map20 = new Converter(20);
 
 function pointConverter(level: number) {
-  const zoom = $state.mapctl.map.getCamera().zoom;
+  const zoom = $state.mapctl.map.getZoom();
   if (zoom === level) return null;
   const factor = map20.factor(zoom);
   return (input: IPathPoint, output: number[]) => {
@@ -224,7 +224,7 @@ class LineShape implements IShape {
   }
 
   rewidth() {
-    const factor = map20.factor($state.mapctl.map.getCamera().zoom);
+    const factor = map20.factor($state.mapctl.map.getZoom());
     const width = (v: number) => $state.width(v) / factor;
     this.d3.att.scale(factor);
     this.d3.selectAll<IPath>('path').att.stroke_width(p => p.width(width));

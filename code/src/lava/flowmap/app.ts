@@ -2,7 +2,7 @@
 
 import { Func, StringMap, Action, IRect, dict, keys, IPoint } from "../type";
 import { selex } from "../d3";
-import { Controller, MapFormat, ILocation } from '../azuremap';
+import { Controller, MapFormat, ILocation } from '../googlemap';
 import { Config } from "./config";
 import { extent } from "d3-array";
 import { scaleLinear, interpolateRgb, scaleSqrt, scaleIdentity } from "d3";
@@ -69,11 +69,12 @@ interface Issue {
 
 class State {
   public get border(): IRect {
+    const div = this.mapctl.container;
     return {
       x: 0,
       y: 0,
-      height: this.mapctl.map.getMapContainer().clientHeight,
-      width: this.mapctl.map.getMapContainer().clientWidth
+      height: div.clientHeight,
+      width: div.clientWidth
     };
   }
   config = null as Config<any>;
