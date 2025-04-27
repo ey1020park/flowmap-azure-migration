@@ -5,106 +5,85 @@
     * `npm run start` to activate the custom visual.
 * Need more info/help? Please visit [here](https://weiweicui.github.io/PowerBI-Flowmap).
 
+##📖 Google Maps 기반 변환 작업 정리
+📌 프로젝트 개요
+원본: Bing Maps 기반 FlowMap Custom Visual
 
-# Power BI Flowmap - Azure Maps Migration README
+1차: Azure Maps로 변환 완료
 
-## ✨ 프로젝트 개요
-Bing Maps 기반의 Power BI Flowmap Custom Visual을 **Azure Maps 기반으로 마이그레이션**하는 작업을 진행 중입니다.
+최종: Google Maps 기반으로 재변환 시도
 
-- 기존 프로젝트: `PowerBI-Flowmap`
-- 대상 파일: `src/flowmap/visual.ts`
-- 주요 리팩토링 경로: `src/lava/bingmap/* ➔ src/lava/azuremap/*`
-- 상태: **`visual.ts` 파일 최종 수정 및 테스트 완료 직전**
+대상 플랫폼: Power BI Desktop (MSI) → Power BI Report Server
 
----
+📂 브랜치 관리
+master : Azure Maps 버전
 
-## 🎓 주요 수정 사항
+googlemap : Google Maps 변환용 브랜치 (진행 중)
 
-### ✏️ 마이그레이션
-- `Bing Maps` 관련 의존성 제거: `@types/bingmaps`, `Microsoft.Maps.*` 코드
-- `Azure Maps` 모듈 생성:
-  - `azuremap/controller.ts`
-  - `azuremap/converter.ts`
-  - `azuremap/geoQuery.ts`
-  - `azuremap/mapFormat.ts`
+🛠️ 주요 변경 내역
+1. Google Maps API 로딩 추가
+visual.ts에 Google Maps API 동적 로딩 코드 삽입
 
-### 🔧 app.ts 수정
-- `tooltipForPath`, `reset`, `repaint` 등에서 `Config<F>` 제네릭 사용 오류 수정
-- `groupBy`, `key2rows` 로직 새롭게 정의
-- `ctx.config` → `cfg.context` 등 참조 방식 수정
+function loadGoogleMaps() {
+  const script = document.createElement("script");
+  script.src = `https://maps.googleapis.com/maps/api/js?key=${(window as any).GOOGLE_MAPS_API_KEY}&callback=initFlowmap`;
+  script.async = true;
+  window["initFlowmap"] = () => console.log("Google Maps API loaded");
+  document.head.appendChild(script);
+}
+constructor에서 loadGoogleMaps() 호출
 
-### 🗂 flow.ts, pie.ts, pins.ts 수정
-- `events.hover?.(rows)` 등 옵셔널 체이닝 에러 수정 (구형 `ts-loader` 대응)
-- `mapctl.pixel()`, `mapctl.location()` 등 Azure Maps 호환화
+2. Azure Maps 의존 코드 제거
+atlas.Map 타입 삭제
 
----
+google.maps.Map 타입으로 변환하여 지도 조작
 
-## 📦 빌드 및 테스트
+지도 이동 및 중심 좌표 설정:
 
-### ✈️ 빌드 도구
-- `pbiviz` 버전: 5.6.0
-- `typescript`: 4.9.5
-- `ts-loader`: 9.4.4 (**v6.x 제거**) 
+setCenter
 
-### ⚡ package.json 핵심
-```json
-"powerbi-visuals-api": "~5.6.0",
-"typescript": "4.9.5",
-"ts-loader": "^9.4.4",
-"webpack": "^5.x",
-```
+setZoom
 
-### tsconfig.json 핵심
-```json
-"compilerOptions": {
-  "target": "es2019",
-  "lib": ["es2019", "dom"],
-  "skipLibCheck": true
-},
-"files": ["src/flowmap/visual.ts"]
-```
+getCenter
 
-### 🧾 명령어
-```bash
-# 로컬 테스트 (Report Server는 개발자 모드 미지원)
-pbiviz package
+3. geoQuery.ts 수정
+Azure Maps Search API → Google Maps Geocoding API로 전환
 
-# 결과: ./dist/visual.pbiviz
-# Power BI Desktop RS 에\uuc11c 복통해 실행 가능
-```
-
----
-
-## 📅 다음 작업 예정
-- [ ] Power BI RS에서 `visual.pbiviz` 직접 임포트 후 결과 확인
-- [ ] 배포 전 “Format Pane” 등 경고 사항 검토 (권장 사항)
-- [ ] GitHub 커밋 정리 및 release tag 생성 예정
-
----
-
-## 🔹 참고 커맨드
-```bash
-# npm 충돌 발생 시
-npm install --legacy-peer-deps
-
-# webpack 관련 에러 시
-npm install webpack webpack-cli --save-dev --legacy-peer-deps
-
-# ts-loader 업그레이드
-npm install ts-loader@9.4.4 --save-dev --legacy-peer-deps
-```
-
----
-
-## ✨ Special Notes
-- `geoQuery.ts` / `controller.ts` 내 `AZURE_MAPS_KEY`는 `config.ts`에서 별도 관리
-- tsconfig에서 `files` 항목은 `visual.ts`만 빌드 대상으로 설정함
-
----
-
-## 📑 변경 히스토리 (간략)
-- `2025-04-17`: Azure Maps 마이그레이션 본격 시작
-- `2025-04-18`: visual.ts 수정 및 pbiviz package 성공
-
----
  
+const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`;
+Geocoding 결과를 파싱하여 latitude, longitude 추출
+
+4. config.ts 삭제
+API Key는 window.GOOGLE_MAPS_API_KEY를 통해 런타임에 주입
+
+소스 코드에 하드코딩된 Key 제거
+
+⚠️ 현재 확인된 한계
+
+항목	상태
+Power BI Online (app.powerbi.com)	❌ 외부 스크립트 로딩 차단 (CSP 위반)
+Power BI Desktop (Store 버전)	❌ 외부 스크립트 로딩 차단
+Power BI Desktop (MSI 버전)	🔄 개발자 모드 활성화 후 테스트 필요
+Power BI Report Server	🔄 CSP 설정 변경 시 허용 가능성 있음
+Power BI 환경은 기본적으로 외부 스크립트 삽입을 차단 (Content-Security-Policy 적용)
+
+따라서 Google Maps 기반 시각화는 플랫폼에 따라 정상 동작 여부가 다를 수 있음
+
+⚙️ 로컬 테스트 방법
+pbiviz package 명령어로 .pbiviz 파일 생성
+
+Power BI Desktop (MSI 설치 버전) 설치 및 개발자 모드 활성화
+
+생성한 .pbiviz 파일을 임포트
+
+window.GOOGLE_MAPS_API_KEY 값을 수동 주입 (또는 스크립트 삽입)
+
+지도와 FlowMap 시각화가 정상적으로 동작하는지 확인
+
+📋 요약
+Google Maps 기반 변환 완료
+
+Power BI CSP 정책에 따라 제한 가능성 존재
+
+Report Server 배포 시 CSP 설정 변경 가능성 확인 필요
+
